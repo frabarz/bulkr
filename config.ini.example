@@ -1,0 +1,3 @@
+[flickr]
+ENDPOINT = https://api.flickr.com/services/rest/
+APIKEY = 
