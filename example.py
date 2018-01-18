@@ -3,7 +3,7 @@
 
 import sys
 
-from flickr import Photo, parse_id
+from flickr import FlickrApiError, InvalidUrlError, Photo, parse_id
 
 if __name__ == "__main__":
     filename = sys.argv[1]
@@ -14,9 +14,11 @@ if __name__ == "__main__":
             try:
                 flickr_id = parse_id(url)
                 photo = Photo(flickr_id)
-                large_url = photo.get_largest()
-                output = '%s\t%s' % (line, large_url)
-            except:
-                output = url
+                large = photo.get_largest()
+                output = 'wget %s' % large.source
+            except InvalidUrlError:
+                output = '# Not a valid URL: %s' % url
+            except FlickrApiError as err:
+                output = '# %s | Flickr API error: %s' % (url, err)
 
             print(output)

@@ -8,7 +8,16 @@ import requests
 
 import base58
 
-FLICKR = configparser.ConfigParser().get('flickr', {})
+config = configparser.ConfigParser()
+config.read('config.ini')
+FLICKR = config['flickr']
+
+
+class InvalidUrlError(Exception):
+    pass
+
+class FlickrApiError(Exception):
+    pass
 
 
 def rest_call(**kwargs):
@@ -16,7 +25,8 @@ def rest_call(**kwargs):
     api_key = FLICKR['APIKEY']
 
     params = dict(api_key=api_key, format='json', nojsoncallback='1')
-    response = requests.get(url, params=kwargs.update(params))
+    kwargs.update(params)
+    response = requests.get(url, params=kwargs)
     
     response.raise_for_status()
     
@@ -25,7 +35,7 @@ def rest_call(**kwargs):
         return root
     else:
         message = root.get('message')
-        raise Exception(message)
+        raise FlickrApiError(message)
 
 
 def parse_id(url):
@@ -37,7 +47,7 @@ def parse_id(url):
     if code:
         return code[0]
     
-    raise FileNotFoundError(url)
+    raise InvalidUrlError(url)
 
 
 class Photo:
@@ -56,8 +66,8 @@ class Photo:
         self.embedable = data.get('canblog')
         self.printable = data.get('canprint')
         
-        sizes = [FlickrPhotoSize(size) for size in data.get('size', [])]
-        self.sizes = sorted(sizes, lambda s: s.area)
+        sizes = [PhotoSize(size) for size in data.get('size', [])]
+        self.sizes = sorted(sizes, key=lambda s: s.area)
     
     def get_smallest(self):
         return self.sizes[0]
